@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G.D. LIBRARY</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="admin-login" class="modal">
+        <div class="modal-content">
+            <h2>Admin Login</h2>
+            <input type="password" id="admin-pass" placeholder="Enter Password">
+            <button onclick="login()">Login</button>
+        </div>
+    </div> 
+           
+    <div id="main-app" class="hidden">
+        <header>
+            <h1>G.D.Library Seat & Fee Management</h1>
+            <button class="logout-btn" onclick="location.reload()">Logout</button>
+        </header>
+
+        <div class="dashboard">
+            <section class="seat-section">
+                <h2>Seat Layout</h2>
+                <div id="seat-grid" class="grid"></div>
+            </section>
+
+            <section class="form-section">
+                <h2>Register New Student</h2>
+                <form id="student-form">
+                    <input type="text" id="name" placeholder="Student Name" required>
+                    <input type="text" id="course" placeholder="Course" required>
+                    <input type="date" id="admission-date" placeholder="Admission Date" required>
+                    <select id="shift">
+                        <option value="full">Full Day (₹800)</option>
+                        <option value="morning">Half Day: Morning (₹600)</option>
+                        <option value="evening">Half Day: Evening (₹600)</option>
+                    </select>
+                    <input type="number" id="paid" placeholder="Amount Paid" required>
+                    <input type="number" id="seat-number" placeholder="Assign Seat #" required>
+                    <input type="tel" id="phone" placeholder="Phone Number" required>
+                    <button type="submit">Add Student</button>
+                </form>
+            </section>
+        </div>
+
+        <section class="table-section">
+            <h2>Student Ledger</h2>
+            <table id="student-table">
+                <thead>
+                    <tr>
+                        <th>Seat</th>
+                        <th>Amission Date</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Phone Number</th>
+                        <th>Shift</th>
+                        <th>Total Fee</th>
+                        <th>Paid</th>
+                        <th>Dues</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="student-data"></tbody>
+            </table>
+        </section>
+    </div>
+
+    
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <script src="index.js"></script>
+
+</body>
+</html>

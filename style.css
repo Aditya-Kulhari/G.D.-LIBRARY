@@ -1,0 +1,98 @@
+:root {
+    --primary: #2c3e50;
+    --secondary: #27ae60;
+    --danger: #e74c3c;
+    --light: #ecf0f1;
+}
+
+body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; }
+.hidden { display: none !important; }
+
+header {
+    background: var(--primary);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard { display: grid; grid-template-columns: 1fr 350px; gap: 20px; padding: 20px; }
+
+/* Seat Grid */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.seat {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: #bdc3c7;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.seat.occupied { background: var(--danger); color: white; }
+.seat.available { background: var(--secondary); color: white; }
+.seat.partial { background: #f39c12;}
+
+/* Forms & Tables */
+.form-section { background: white; padding: 20px; border-radius: 8px; }
+input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button { background: var(--primary); color: white; cursor: pointer; border: none; }
+button:hover { opacity: 0.9; }
+
+.table-section { padding: 20px; }
+table { width: 100%; border-collapse: collapse; background: white; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+th { background: var(--primary); color: white; }
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal-content { background: white; padding: 30px; border-radius: 8px; text-align: center; }
+
+.edit-btn {
+    background: #ffc107; /* Yellow/Amber */
+    color: black;
+    margin-right: 5px;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.edit-btn:hover {
+    opacity: 0.8;
+}
+
+input[type="text"], input[type="number"] {
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
