@@ -136,6 +136,12 @@ function renderTable(students) {
                 <td style="color: ${dues > 0 ? 'red' : 'green'}">₹${dues}</td>
                 <td>
                     <button class="edit-btn" onclick="toggleEdit('${s.id}')">Edit</button>
+                                 
+                    <button onclick="sendConfirmation('${s.phone}', '${s.name}', '${s.seat}', ${s.paid})" 
+                     style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">
+                        Send SMS
+                    </button>
+                    
                     <button onclick="deleteStudent('${s.id}')" style="background:red">Exit</button>
                 </td>
             </tr>
@@ -245,4 +251,17 @@ function saveFullEdit(studentId, row) {
     db.ref(`students/${studentId}`).update(updatedData)
         .then(() => alert("Record Updated"))
         .catch(err => alert("Update Failed: " + err.message));
+}
+
+// Function to send the initial Seat Confirmation
+function sendConfirmation(phone, name, seat, paid) {
+    // 1. Create the text message
+    const message = `Welcome to G.D. Library, ${name}! Your seat #${seat} is confirmed. Payment received: ₹${paid}. Thank you for joining us!`;
+
+    // 2. Prepare the message for the web link (replaces spaces with special codes)
+    const encodedMessage = encodeURIComponent(message);
+
+    // 3. Open the phone's SMS app
+    // Format: sms:+911234567890?body=YourMessage
+    window.location.href = `sms:${phone}?body=${encodedMessage}`;
 }
