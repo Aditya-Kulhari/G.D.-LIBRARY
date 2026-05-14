@@ -35,11 +35,18 @@ function listenToData() {
     // This "listens" for any change in the database and updates your screen automatically
     db.ref('students').on('value', (snapshot) => {
         const data = snapshot.val();
-        
-        allStudentsGlobal = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+
+        // Convert object to array
+        let studentsArray = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+
+        // SORTING LOGIC: Sort by seat number in ascending order
+        studentsArray.sort((a, b) => {
+            return parseInt(a.seat) - parseInt(b.seat);
+        });
+
+        allStudentsGlobal = studentsArray;
         renderApp(allStudentsGlobal);
-    });
-       
+    });     
 }
 
 // RENDER SEATS
@@ -121,12 +128,15 @@ function renderTable(students) {
         const total = FEE_STRUCTURE[s.shift];
         const dues = total - s.paid;
 
-        const formattedDate = formatDateDisplay(s.admissionDate);
+        // Check if 1 month has passed
+        const dueWarning = isFeeDue(s.admissionDate);
         
         tbody.innerHTML += `
             <tr id="row-${s.id}">
                 <td class="editable" data-field="seat">${s.seat}</td>
-                <td class="editable" data-field="admissionDate">${s.admissionDate}</td>
+                <td class="editable" data-field="admissionDate" style="color: ${dueWarning ? 'red' : 'black'}; font-weight: ${dueWarning ? 'bold' : 'normal'}">
+                    ${s.admissionDate} ${dueWarning ? '<br><small>⚠️ MONTH ENDED</small>' : ''}
+                </td>
                 <td class="editable" data-field="name">${s.name}</td>
                 <td class="editable" data-field="course">${s.course}</td>
                 <td class="editable" data-field="phone">${s.phone}</td>
@@ -264,4 +274,17 @@ function sendConfirmation(phone, name, seat, paid) {
     // 3. Open the phone's SMS app
     // Format: sms:+911234567890?body=YourMessage
     window.location.href = `sms:${phone}?body=${encodedMessage}`;
+}
+    // Function to check if the fee is due (1 month / 30 days passed)
+function isFeeDue(admissionDate) {
+    if (!admissionDate) return false;
+    
+    const admission = new Date(admissionDate);
+    const today = new Date();
+    
+    // Calculate the difference in time
+    const diffTime = Math.abs(today - admission);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    return diffDays >= 30; // Returns true if 30 or more days have passed
 }
