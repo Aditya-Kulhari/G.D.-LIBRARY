@@ -96,3 +96,14 @@ input[type="text"], input[type="number"] {
     border: 1px solid #ccc;
     border-radius: 3px;
 }
+
+/* Highlight animation for selected student row */
+@keyframes flash-highlight {
+    0% { background-color: #fffde7; }
+    50% { background-color: #fff59d; }
+    100% { background-color: white; }
+}
+
+.flash-row {
+    animation: flash-highlight 2s ease-in-out;
+}
