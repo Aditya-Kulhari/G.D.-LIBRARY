@@ -1,7 +1,7 @@
 {
   "name": "G.D. Library Admin",
   "short_name": "GD Library",
-  "start_url": "library.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#2c3e50",
   "theme_color": "#2c3e50",
