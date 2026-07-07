@@ -1,3 +1,14 @@
+// Register Service Worker for PWA (App Icon installation)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered!', reg))
+            .catch(err => console.log('Service Worker Registration Failed', err));
+    });
+}
+
+// ... your existing Firebase Config and other code goes here ...
+
 // YOUR FIREBASE CONFIGURATION (Paste from Firebase Console)
 const firebaseConfig = {
     apiKey: "AIzaSyDFLA0gJ7HaA1d_1r4XM6yXvM3qjc4m4eI",
@@ -67,9 +78,55 @@ function renderSeats(students) {
         const div = document.createElement('div');
         div.className = `seat ${status}`;
         div.innerText = i;
+        // NEW: Add click event logic
+        div.onclick = () => {
+            if (status === 'available') {
+                // If seat is empty, automatically fill the Seat # input field in the form
+                document.getElementById('seat-number').value = i;
+                document.getElementById('name').focus(); // Move cursor to Name input
+                alert(`Seat #${i} is empty. Selected for Registration form!`);
+            } else {
+                // If occupied, navigate to student information
+                navigateToStudent(studentInSeat);
+            }
+        };
         grid.appendChild(div);
     }
 }
+
+// NEW FUNCTION: Directs to the student info in the ledger
+    function navigateToStudent(matchingStudents) {
+        if (!matchingStudents || matchingStudents.length === 0) return;
+
+        let targetStudentId = matchingStudents[0].id;
+
+        // If two half-day students share the seat, let the admin choose which one to view
+        if (matchingStudents.length > 1) {
+            let choices = matchingStudents.map((s, index) => `${index + 1}. ${s.name} (${s.shift} shift)`).join("\n");
+            let choice = prompt(`This seat is shared by two students:\n\n${choices}\n\nEnter number 1 or 2 to view:`, "1");
+            
+            if (choice === "2" && matchingStudents[1]) {
+                targetStudentId = matchingStudents[1].id;
+            } else if (choice !== "1") {
+                return; // User canceled or typed invalid input
+            }
+        }
+
+        // Find the row element in the ledger table
+        const studentRow = document.getElementById(`row-${targetStudentId}`);
+        
+        if (studentRow) {
+            // Smoothly scroll the page down to the specific student row
+            studentRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Apply visual flash highlight
+            studentRow.classList.remove('flash-row'); // Reset animation if clicked repeatedly
+            void studentRow.offsetWidth; // Trigger a reflow to restart animation
+            studentRow.classList.add('flash-row');
+        } else {
+            alert("Student record found, but could not locate row in ledger.");
+        }
+    }
 
 // Avaliability Logic
 function checkSeatAvailability(seatNum, newShift, existingStudents) {
@@ -151,6 +208,11 @@ function renderTable(students) {
                      style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">
                         Send SMS
                     </button>
+
+                     <button onclick="sendWhatsApp('${s.phone}', '${s.name}', '${s.seat}', ${s.paid})" 
+                            style="background:#25D366; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">
+                        WhatsApp
+                    </button>
                     
                     <button onclick="deleteStudent('${s.id}')" style="background:red">Exit</button>
                 </td>
@@ -158,6 +220,28 @@ function renderTable(students) {
         `;
     });
 }
+ // NEW FUNCTION: Directs the user to WhatsApp with a pre-filled message
+function sendWhatsApp(phone, name, seat, paid) {
+    // 1. Clean the phone number (Remove spaces, dashes, and ensure country code is attached)
+    // WhatsApp API strictly requires the country code (e.g., 91 for India) without the '+' sign.
+    let cleanPhone = phone.replace(/\D/g, ''); // Removes all non-numerical characters
+    
+    // If it's a 10-digit number (common in India), automatically prefix '91'
+    if (cleanPhone.length === 10) {
+        cleanPhone = '91' + cleanPhone;
+    }
+
+    // 2. Create the text message
+    const message = `Welcome to G.D. Library, ${name}! Your seat #${seat} is confirmed. Payment received: ₹${paid}. Thank you for joining us!`;
+
+    // 3. Encode the message for URL structures
+    const encodedMessage = encodeURIComponent(message);
+
+    // 4. Open WhatsApp web/app in a new browser tab
+    const whatsappURL = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+    window.open(whatsappURL, '_blank');
+}
+
 
 // ADD STUDENT TO FIREBASE
 document.getElementById('student-form').addEventListener('submit', (e) => {
