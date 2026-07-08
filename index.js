@@ -248,7 +248,7 @@ function renderTable(students) {
                         <option value="due" style="background: white; color: black;">⚠️ Due Notice</option>
                     </select>
 
-                        <select onchange="handleMessageSelection(this, '${s.phone}', '${s.name}', '${s.seat}', ${s.paid}, ${dues})" 
+                        <select onchange="handleMessageSelection(this,  'whatsapp', '${s.phone}', '${s.name}', '${s.seat}', ${s.paid}, ${dues})" 
                             style="background:#25D366; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-button: 2px; text-align-last: center;">
                         <option value="" disabled selected hidden>WhatsApp</option>
                         <option value="admission" style="background: white; color: black;">🎉 Admission</option>
