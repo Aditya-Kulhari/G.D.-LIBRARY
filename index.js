@@ -57,7 +57,7 @@ function listenToData() {
 
         allStudentsGlobal = studentsArray;
         renderApp(allStudentsGlobal);
-    });     
+    });      
 }
 
 // RENDER SEATS
@@ -66,7 +66,7 @@ function renderSeats(students) {
     grid.innerHTML = '';
 
     for (let i = 1; i <= TOTAL_SEATS; i++) {
-        const studentInSeat = students.filter(s => s.seat == i);
+        const studentInSeat = students.filter(s => Number(s.seat) == i);
         let status = 'available';
 
         if (studentInSeat.length === 2 || studentInSeat.some(s => s.shift === 'full')) {
@@ -74,10 +74,23 @@ function renderSeats(students) {
         }  else if (studentInSeat.length === 1) {
             status = 'partial';
         }
-
+         
         const div = document.createElement('div');
         div.className = `seat ${status}`;
-        div.innerText = i;
+        
+        // FIX: Force a fresh evaluation of the date string safely
+        const hasDueStudent = studentInSeat.some(s => {
+            if (!s.admissionDate) return false;
+            return isFeeDue(s.admissionDate);
+        });
+
+        // Inject HTML based on alert status
+        if (hasDueStudent) {
+            div.innerHTML = `${i}<span class="badge-siren">🔔</span>`;
+        } else {
+            div.innerText = i;
+        }
+
         // NEW: Add click event logic
         div.onclick = () => {
             if (status === 'available') {
@@ -93,8 +106,31 @@ function renderSeats(students) {
         grid.appendChild(div);
     }
 }
+    
+    // FIXED: Clean timezone-independent calculation
+function isFeeDue(admissionDate) {
+    if (!admissionDate) return false;
+    
+    // Split year, month, day directly to completely bypass standard timezone shifts
+    const parts = admissionDate.split("-"); 
+    if (parts.length !== 3) return false;
 
-// NEW FUNCTION: Directs to the student info in the ledger
+    const admission = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const today = new Date();
+    
+    // Strip time elements out so we compare pure dates
+    admission.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    
+    // Calculate precise millisecond-to-day conversion
+    const diffTime = today.getTime() - admission.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    return diffDays >= 30; // Triggers if 30 or more days have elapsed
+}
+   
+
+    // NEW FUNCTION: Directs to the student info in the ledger
     function navigateToStudent(matchingStudents) {
         if (!matchingStudents || matchingStudents.length === 0) return;
 
@@ -179,13 +215,13 @@ function formatDateDisplay(rawDate) {
 // Render Table
 function renderTable(students) {
     const tbody = document.getElementById('student-data');
-    tbody.innerHTML = '';
+    tbody.innerHTML = `...`;
     
     students.forEach((s) => {
         const total = FEE_STRUCTURE[s.shift];
         const dues = total - s.paid;
 
-        // Check if 1 month has passed
+// Check if 1 month has passed
         const dueWarning = isFeeDue(s.admissionDate);
         
         tbody.innerHTML += `
@@ -202,46 +238,64 @@ function renderTable(students) {
                 <td class="editable" data-field="paid">${s.paid}</td>
                 <td style="color: ${dues > 0 ? 'red' : 'green'}">₹${dues}</td>
                 <td>
-                    <button class="edit-btn" onclick="toggleEdit('${s.id}')">Edit</button>
-                                 
-                    <button onclick="sendConfirmation('${s.phone}', '${s.name}', '${s.seat}', ${s.paid})" 
-                     style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">
-                        Send SMS
-                    </button>
+                        <button class="edit-btn" onclick="toggleEdit('${s.id}')">Edit</button>
 
-                     <button onclick="sendWhatsApp('${s.phone}', '${s.name}', '${s.seat}', ${s.paid})" 
-                            style="background:#25D366; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">
-                        WhatsApp
-                    </button>
-                    
-                    <button onclick="deleteStudent('${s.id}')" style="background:red">Exit</button>
+                        <select onchange="handleMessageSelection(this, 'sms', '${s.phone}', '${s.name}', '${s.seat}', ${s.paid}, ${dues})" 
+                            style="background:#007bff; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-button: 2px; text-align-last: center;">
+                        <option value="" disabled selected hidden>Send SMS</option>
+                        <option value="admission" style="background: white; color: black;">🎉 Admission</option>
+                        <option value="paid" style="background: white; color: black;">✅ Paid</option>
+                        <option value="due" style="background: white; color: black;">⚠️ Due Notice</option>
+                    </select>
+
+                        <select onchange="handleMessageSelection(this, '${s.phone}', '${s.name}', '${s.seat}', ${s.paid}, ${dues})" 
+                            style="background:#25D366; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; margin-button: 2px; text-align-last: center;">
+                        <option value="" disabled selected hidden>WhatsApp</option>
+                        <option value="admission" style="background: white; color: black;">🎉 Admission</option>
+                        <option value="paid" style="background: white; color: black;">✅ Paid</option>
+                        <option value="due" style="background: white; color: black;">⚠️ Due Notice</option>
+                    </select>
+
+                        <button onclick="deleteStudent('${s.id}')" style="background:red">Exit</button>   
                 </td>
             </tr>
         `;
     });
 }
- // NEW FUNCTION: Directs the user to WhatsApp with a pre-filled message
-function sendWhatsApp(phone, name, seat, paid) {
-    // 1. Clean the phone number (Remove spaces, dashes, and ensure country code is attached)
-    // WhatsApp API strictly requires the country code (e.g., 91 for India) without the '+' sign.
-    let cleanPhone = phone.replace(/\D/g, ''); // Removes all non-numerical characters
-    
-    // If it's a 10-digit number (common in India), automatically prefix '91'
-    if (cleanPhone.length === 10) {
-        cleanPhone = '91' + cleanPhone;
+
+// Global Message Handler for both platforms
+function handleMessageSelection(dropdown, platform, phone, name, seat, paid, dues) {
+    const action = dropdown.value;
+    if (!action) return;
+
+    // Build template messages
+    let message = "";
+    if (action === 'admission') {
+        message = `Welcome to G.D. Library, ${name}!\n\nYour admission is confirmed on Seat #${seat}.\nPayment received: ₹${paid}.\n\nThank you for joining us! 📚\n- G.D. Library`;
+    } else if (action === 'paid') {
+        message = `Hello ${name},\n\nYour library fee of ₹${paid} for Seat #${seat} has been successfully received. Thank you!\n- G.D. Library`;
+    } else if (action === 'due') {
+        if (dues <= 0) {
+            alert("This student has no outstanding dues!");
+            dropdown.value = "";
+            return;
+        }
+        message = `Dear ${name},\n\nThis is a reminder that your monthly fee for Seat #${seat} is due. Pending Amount: ₹${dues}.\n\nPlease clear it soon.\nThank you,\nG.D. Library`;
     }
 
-    // 2. Create the text message
-    const message = `Welcome to G.D. Library, ${name}! Your seat #${seat} is confirmed. Payment received: ₹${paid}. Thank you for joining us!`;
-
-    // 3. Encode the message for URL structures
     const encodedMessage = encodeURIComponent(message);
 
-    // 4. Open WhatsApp web/app in a new browser tab
-    const whatsappURL = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-    window.open(whatsappURL, '_blank');
-}
+    if (platform === 'whatsapp') {
+        let cleanPhone = phone.replace(/\D/g, ''); 
+        if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
+    } else if (platform === 'sms') {
+        // Triggers the phone's default native SMS messenger application link
+        window.location.href = `sms:${phone}?body=${encodedMessage}`;
+    }
 
+    dropdown.value = ""; // Reset label
+}
 
 // ADD STUDENT TO FIREBASE
 document.getElementById('student-form').addEventListener('submit', (e) => {
@@ -345,30 +399,4 @@ function saveFullEdit(studentId, row) {
     db.ref(`students/${studentId}`).update(updatedData)
         .then(() => alert("Record Updated"))
         .catch(err => alert("Update Failed: " + err.message));
-}
-
-// Function to send the initial Seat Confirmation
-function sendConfirmation(phone, name, seat, paid) {
-    // 1. Create the text message
-    const message = `Welcome to G.D. Library, ${name}! Your seat #${seat} is confirmed. Payment received: ₹${paid}. Thank you for joining us!`;
-
-    // 2. Prepare the message for the web link (replaces spaces with special codes)
-    const encodedMessage = encodeURIComponent(message);
-
-    // 3. Open the phone's SMS app
-    // Format: sms:+911234567890?body=YourMessage
-    window.location.href = `sms:${phone}?body=${encodedMessage}`;
-}
-    // Function to check if the fee is due (1 month / 30 days passed)
-function isFeeDue(admissionDate) {
-    if (!admissionDate) return false;
-    
-    const admission = new Date(admissionDate);
-    const today = new Date();
-    
-    // Calculate the difference in time
-    const diffTime = Math.abs(today - admission);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
-    return diffDays >= 30; // Returns true if 30 or more days have passed
 }
