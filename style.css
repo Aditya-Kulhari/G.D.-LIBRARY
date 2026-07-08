@@ -30,7 +30,9 @@ header {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+
 .seat {
+    /* LAPTOP DEFAULT: Restores your original fixed sizing */
     width: 50px;
     height: 50px;
     display: flex;
@@ -40,6 +42,24 @@ header {
     background: #bdc3c7;
     font-weight: bold;
     cursor: pointer;
+    position: relative; /* Anchors the ringing bell symbol */
+}
+
+/* MOBILE FIX: This block only triggers on screens smaller than 600px wide (Phones) */
+@media (max-width: 600px) {
+    .grid {
+        /* Locks columns to a tidy 6-row block so it doesn't distort on phone displays */
+        grid-template-columns: repeat(6, 1fr);
+        padding: 12px;
+        gap: 8px;
+    }
+    .seat {
+        /* Overrides the fixed 50px so they match seamlessly as perfect squares */
+        width: auto;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        font-size: 14px;
+    }
 }
 
 .seat.occupied { background: var(--danger); color: white; }
@@ -95,7 +115,7 @@ input[type="text"], input[type="number"] {
     padding: 4px;
     border: 1px solid #ccc;
     border-radius: 3px;
-}
+} 
 
 /* Highlight animation for selected student row */
 @keyframes flash-highlight {
@@ -107,3 +127,28 @@ input[type="text"], input[type="number"] {
 .flash-row {
     animation: flash-highlight 2s ease-in-out;
 }
+
+/* Precise sizing and top-right containment */
+.seat .badge-siren {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 13px;
+    line-height: 1;
+    z-index: 10;
+    display: inline-block;
+    /* Triggers the continuous ringing effect every 0.6 seconds */
+    animation: ring-alarm 0.6s ease-in-out infinite;
+    transform-origin: top center; /* Makes it swing from the top hanger */
+}
+/*
+@keyframes ring-alarm {
+    0% { transform: rotate(0deg); }
+    15% { transform: rotate(50deg); }
+    30% { transform: rotate(-50deg); }
+    45% { transform: rotate(10deg); }
+    60% { transform: rotate(-10deg); }
+    75% { transform: rotate(4deg); }
+    100% { transform: rotate(0deg); }
+}
+*/
