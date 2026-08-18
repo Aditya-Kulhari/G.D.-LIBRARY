@@ -1,24 +1,24 @@
-const CACHE_NAME = 'gd-library-v3';
+const CACHE_NAME = 'gd-library-v4'; // Bumped version to invalidate old cache
 const ASSETS = [
-  './', // Essential for caching the root URL
+  './',
   './index.html',
   './style.css',
   './index.js',
   './manifest.json'
 ];
 
-// 1. Install Service Worker and cache static structural files
+// 1. Install Service Worker and cache assets
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('Caching shell assets...');
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(ASSETS); // Fixed: was STATIC_ASSETS
     })
   );
-  self.skipWaiting(); 
+  self.skipWaiting();
 });
 
-// 2. Clean up OLD caches when the new service worker takes over
+// 2. Clean up OLD caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -35,31 +35,43 @@ self.addEventListener('activate', (e) => {
   return self.clients.claim();
 });
 
-// 3. Smart Fetch Strategy: Network-First for index.js, Cache-First for others
+// 3. Fetch Strategy: Network-First for HTML & JS, Cache-First for static styling/icons
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
+  const isHtmlOrJs =
+    e.request.mode === 'navigate' ||
+    url.pathname.endsWith('index.html') ||
+    url.pathname.endsWith('index.js') ||
+    url.pathname === '/';
 
-  // If requesting your main JavaScript engine file, always try network first so updates register instantly
-  if (url.pathname.endsWith('index.js')) {
+  if (isHtmlOrJs) {
+    // Network-First: Always try fresh code first
     e.respondWith(
       fetch(e.request)
         .then((networkResponse) => {
-          // Save a copy of the fresh script to the cache just in case they go offline
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, networkResponse.clone());
-            return networkResponse;
-          });
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, responseClone);
+            });
+          }
+          return networkResponse;
         })
-        .catch(() => {
-          // If network is completely down (offline library), fallback to cached version
-          return caches.match(e.request);
-        })
+        .catch(() => caches.match(e.request))
     );
   } else {
-    // For HTML, CSS, and Manifest, use standard Cache-First strategy for speed
+    // Cache-First: For CSS, images, and manifest
     e.respondWith(
       caches.match(e.request).then((cachedResponse) => {
-        return cachedResponse || fetch(e.request);
+        return cachedResponse || fetch(e.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(e.request, responseClone);
+            });
+          }
+          return networkResponse;
+        });
       })
     );
   }
