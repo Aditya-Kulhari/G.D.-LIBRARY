@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gd-library-v2';
+const CACHE_NAME = 'gd-library-v3';
 const ASSETS = [
   './', // Essential for caching the root URL
   './index.html',
@@ -7,18 +7,18 @@ const ASSETS = [
   './manifest.json'
 ];
 
-// Install Service Worker and cache the files
+// 1. Install Service Worker and cache static structural files
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      console.log('Caching shell assets...');
+      return cache.addAll(STATIC_ASSETS);
     })
   );
-  // Force the waiting service worker to become active immediately
   self.skipWaiting(); 
 });
 
-// Clean up OLD caches when the new service worker takes over
+// 2. Clean up OLD caches when the new service worker takes over
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -32,15 +32,35 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
-  // Force the new service worker to control the page immediately
   return self.clients.claim();
 });
 
-// Fetch assets from cache or network
+// 3. Smart Fetch Strategy: Network-First for index.js, Cache-First for others
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
-  );
+  const url = new URL(e.request.url);
+
+  // If requesting your main JavaScript engine file, always try network first so updates register instantly
+  if (url.pathname.endsWith('index.js')) {
+    e.respondWith(
+      fetch(e.request)
+        .then((networkResponse) => {
+          // Save a copy of the fresh script to the cache just in case they go offline
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, networkResponse.clone());
+            return networkResponse;
+          });
+        })
+        .catch(() => {
+          // If network is completely down (offline library), fallback to cached version
+          return caches.match(e.request);
+        })
+    );
+  } else {
+    // For HTML, CSS, and Manifest, use standard Cache-First strategy for speed
+    e.respondWith(
+      caches.match(e.request).then((cachedResponse) => {
+        return cachedResponse || fetch(e.request);
+      })
+    );
+  }
 });
