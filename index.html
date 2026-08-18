@@ -15,29 +15,74 @@
             <button onclick="login()">Login</button>
         </div>
     </div> 
-           
+            
     <div id="main-app" class="hidden">
         <header>
-            <h1>G.D.Library Seat & Fee Management</h1>
+            <h1 class="desktop-title">G.D.Library Seat & Fee Management</h1>
             <button class="logout-btn" onclick="location.reload()">Logout</button>
         </header>
 
         <div class="dashboard">
+            
+            <section class="mobile-shifts-row">
+                <div class="shift-box full-box">
+                    <h3>Full Day</h3>
+                    <span id="count-full">0</span>
+                </div>
+                <div class="shift-box morning-box">
+                    <h3>Morning</h3>
+                    <span id="count-morning">0</span>
+                </div>
+                <div class="shift-box evening-box">
+                    <h3>Evening</h3>
+                    <span id="count-evening">0</span>
+                </div>
+            </section>
+
+            <section class="mobile-total-row">
+                <div class="total-students-card">
+                    <h3>Total Active Students</h3>
+                    <span id="stat-total-students">0</span>
+                </div>
+            </section>
+            
+            <section class="mobile-availability-row">
+            <div class="avail-box">
+                <h3>Available Seats</h3>
+                <p>Full Day: <strong id="stat-available-full">0</strong></p>
+                <p>Morning Shift: <strong id="stat-available-morning">0</strong></p>
+                <p>Evening Shift: <strong id="stat-available-evening">0</strong></p>
+            </div>         
+
+                <button class="due-action-btn" onclick="filterExpiredMemberships()">
+                    <h3>Payment Due</h3>
+                    <span id="stat-expired-count">0 Seats</span>
+                </button>
+            </section>
+
             <section class="seat-section">
-                <h2>Seat Layout</h2>
+                <h2 class="section-title">Seat Layout Grid</h2>
                 <div id="seat-grid" class="grid"></div>
             </section>
 
-            <section class="form-section">
-                <h2>Register New Student</h2>
+            <section class="form-section side-drawer" id="reg-drawer">
+                <div class="drawer-header">
+                    <h2>Register New Student</h2>
+                    <span class="close-drawer" onclick="toggleDrawer('reg-drawer')">&times;</span>
+                </div>
                 <form id="student-form">
                     <input type="text" id="name" placeholder="Student Name" required>
                     <input type="text" id="course" placeholder="Course" required>
                     <input type="date" id="admission-date" placeholder="Admission Date" required>
+                    <label for="plan">Plan Duration:</label>
+                    <select id="plan">
+                        <option value="1">1 Month</option>
+                        <option value="3">3 Months</option>
+                    </select>
                     <select id="shift">
-                        <option value="full">Full Day (₹800)</option>
-                        <option value="morning">Half Day: Morning (₹600)</option>
-                        <option value="evening">Half Day: Evening (₹600)</option>
+                        <option value="full">Full Day</option>
+                        <option value="morning">Half Day: Morning</option>
+                        <option value="evening">Half Day: Evening</option>
                     </select>
                     <input type="number" id="paid" placeholder="Amount Paid" required>
                     <input type="number" id="seat-number" placeholder="Assign Seat #" required>
@@ -45,36 +90,59 @@
                     <button type="submit">Add Student</button>
                 </form>
             </section>
+
+            <section class="table-section side-drawer" id="ledger-drawer">
+                <div class="drawer-header">
+                    <h2>Student Ledger Archive</h2>
+                    <span class="close-drawer" onclick="toggleDrawer('ledger-drawer')">&times;</span>
+                </div>
+                <div class="mobile-table-wrapper">
+                    <table id="student-table">
+                        <thead>
+                            <tr>
+                                <th>Seat</th>
+                                <th>Admission</th>
+                                <th>Name</th>
+                                <th>Course</th>
+                                <th>Phone</th>
+                                <th>Shift</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th>Dues</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-data"></tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
-        <section class="table-section">
-            <h2>Student Ledger</h2>
-            <table id="student-table">
-                <thead>
-                    <tr>
-                        <th>Seat</th>
-                        <th>Amission Date</th>
-                        <th>Name</th>
-                        <th>Course</th>
-                        <th>Phone Number</th>
-                        <th>Shift</th>
-                        <th>Total Fee</th>
-                        <th>Paid</th>
-                        <th>Dues</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="student-data"></tbody>
-            </table>
-        </section>
+        <div class="fab-container">
+            <button class="fab-btn ledger-fab" onclick="toggleDrawer('ledger-drawer')" title="View Ledger">📋</button>
+            <button class="fab-btn reg-fab" onclick="toggleDrawer('reg-drawer')" title="Add Student">+</button>
+        </div>
     </div>
 
-    
+    <div id="student-modal" class="custom-modal">
+        <div class="custom-modal-content">
+            <span class="close-modal" onclick="closeStudentModal()">&times;</span>
+            <h3 id="modal-seat-title">Seat #00</h3>
+            <hr>
+            <p><strong>Name:</strong> <span id="modal-name">-</span></p>
+            <p><strong>Course:</strong> <span id="modal-course">-</span></p>
+            <p><strong>Phone:</strong> <span id="modal-phone">-</span></p>
+            <p><strong>Shift:</strong> <span id="modal-shift">-</span></p>
+            <p><strong>Dues Status:</strong> <span id="modal-dues">-</span></p>
+            <p><strong>Days Active:</strong> <span id="modal-days">-</span></p>
+            <br>
+            <button id="modal-msg-btn" class="whatsapp-btn">💬 Send Alert via WhatsApp</button>
+            <button id="modal-vacant-btn" class="delete-btn">Vacant Seat</button>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
     <script src="index.js"></script>
-
 </body>
 </html>
