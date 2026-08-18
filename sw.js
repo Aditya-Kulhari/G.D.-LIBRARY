@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gd-library-v4'; // Bumped version to invalidate old cache
+const CACHE_NAME = 'gd-library-v5'; // 1. Bump version
 const ASSETS = [
   './',
   './index.html',
@@ -7,18 +7,18 @@ const ASSETS = [
   './manifest.json'
 ];
 
-// 1. Install Service Worker and cache assets
+// 1. Install & Cache Shell Assets
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('Caching shell assets...');
-      return cache.addAll(ASSETS); // Fixed: was STATIC_ASSETS
+      return cache.addAll(ASSETS);
     })
   );
-  self.skipWaiting();
+  self.skipWaiting(); // Force new service worker to activate immediately
 });
 
-// 2. Clean up OLD caches
+// 2. Clean up Old Caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -32,20 +32,26 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
-  return self.clients.claim();
+  return self.clients.claim(); // Take control of all open pages immediately
 });
 
-// 3. Fetch Strategy: Network-First for HTML & JS, Cache-First for static styling/icons
+// 3. Fetch Strategy: Network-First for HTML, JS, and CSS
 self.addEventListener('fetch', (e) => {
+  // Ignore non-GET or external (e.g. Firebase) requests
+  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   const url = new URL(e.request.url);
-  const isHtmlOrJs =
+  const isCoreAsset =
     e.request.mode === 'navigate' ||
-    url.pathname.endsWith('index.html') ||
-    url.pathname.endsWith('index.js') ||
+    url.pathname.endsWith('.html') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
     url.pathname === '/';
 
-  if (isHtmlOrJs) {
-    // Network-First: Always try fresh code first
+  if (isCoreAsset) {
+    // Network-First: Always fetch latest from server; fallback to cache if offline
     e.respondWith(
       fetch(e.request)
         .then((networkResponse) => {
@@ -60,7 +66,7 @@ self.addEventListener('fetch', (e) => {
         .catch(() => caches.match(e.request))
     );
   } else {
-    // Cache-First: For CSS, images, and manifest
+    // Cache-First for static media/icons/fonts
     e.respondWith(
       caches.match(e.request).then((cachedResponse) => {
         return cachedResponse || fetch(e.request).then((networkResponse) => {
