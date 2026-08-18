@@ -173,10 +173,10 @@ header {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
     background: white;
-    padding: 24px;
+    padding: 16px;
     border-radius: 14px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
@@ -186,10 +186,10 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #cbd5e1;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     position: relative;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -217,9 +217,9 @@ header {
 
 .seat .badge-siren {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 14px;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
     line-height: 1;
 }
 
@@ -411,4 +411,24 @@ th {
     border: none;
     cursor: pointer;
     padding: 12px;
+}
+
+/* Tablet & Laptop/Desktop Layout (768px and up) */
+@media (min-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); /* Fluid auto-fill on laptops */
+        gap: 12px;
+        padding: 24px;
+    }
+
+    .seat {
+        font-size: 16px;
+        border-radius: 10px;
+    }
+
+    .seat .badge-siren {
+        top: 4px;
+        right: 4px;
+        font-size: 14px;
+    }
 }
